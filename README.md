@@ -46,7 +46,7 @@ export GEMINI_API_KEY="YOUR_API_KEY"  # Replace with your actual key
 uvicorn main:app --reload --host 0.0.0.0 --port 8090
 ```
 
-🧠 Powered By
+## 🧠 Powered By
     - FastAPI
     - Google Gemini
     - Pydantic
