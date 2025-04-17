@@ -417,11 +417,8 @@ public class ResumeService {
         "\t\"location\": \"Pune, Maharashtra\",\r\n" + //
         "\t\"duration\": \"Nov 2023 - Jan 2025\"\r\n" + //
         "\t\"tools\": [\"Node\", \"JS\", \".NET\", \"Redux\", \"MSAL\", \"MongoDB\", so on ... ]\r\n" + //
-        "\t\"description\": [\r\n" + //
-        "\t\t\"1st runner up prize in crafted AI persona, to explore LLM's subtle contextual understanding and create innovative collaborations between humans and machines. Devised a TabNet Classifier Model having 98.7% accuracy in detecting forest fire through IoT sensor data, deployed on AWS and edge devices 'Silvanet Wildfire Sensors' using technologies TinyML, Docker, Redis, and celery.\",\r\n"
+        "\t\"description\": \"Automated data ingestion and market risk visualization using historical data for decision-making.\"\r\n"
         + //
-        "\t\t[and So on ...]\r\n" + //
-        "\t],\r\n" + //
         "\t\"responsibilities\": [\r\n" + //
         "\t\t\"Envisioned Solution Architecture and Design for modernization efforts\",\r\n" + //
         "\t\t\"Adopted DevOps practices including CI/CD, Test Automation, Deployment automation, etc.\",\r\n" + //
@@ -455,10 +452,12 @@ public class ResumeService {
       String jsonResponse = extractJsonFromGeminiResponse(rawResponse);
 
       ObjectMapper objectMapper = new ObjectMapper();
+
       ResumeData data = objectMapper.readValue(jsonResponse, ResumeData.class);
+      log.info("data: {} :" + data);
       return data;
-    } catch (HttpClientErrorException e) {
-      log.error("Gemini API call failed: " + e.getResponseBodyAsString(), e);
+    } catch (Exception e) {
+      log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
       throw new GeminiException("Error while extracting resume data. Please try again later.");
     }
   }
