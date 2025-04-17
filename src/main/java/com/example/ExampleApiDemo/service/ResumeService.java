@@ -1,8 +1,11 @@
 package com.example.ExampleApiDemo.service;
 
+import com.example.ExampleApiDemo.exceptions.GeminiException;
 import com.example.ExampleApiDemo.model.ResumeData;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,7 @@ import java.io.IOException;
 import java.util.*;
 
 @Service
+@Slf4j
 public class ResumeService {
 
   @Value("${gemini.api.key}")
@@ -454,7 +458,8 @@ public class ResumeService {
       ResumeData data = objectMapper.readValue(jsonResponse, ResumeData.class);
       return data;
     } catch (HttpClientErrorException e) {
-      throw new RuntimeException("Gemini API call failed: " + e.getResponseBodyAsString());
+      log.error("Gemini API call failed: " + e.getResponseBodyAsString(), e);
+      throw new GeminiException("Error while extracting resume data. Please try again later.");
     }
   }
 
