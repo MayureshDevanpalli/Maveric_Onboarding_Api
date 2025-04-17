@@ -47,8 +47,6 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8090
 ```
 
 🧠 Powered By
-    FastAPI
-    
-    Google Gemini
-    
-    Pydantic
+    - FastAPI
+    - Google Gemini
+    - Pydantic
