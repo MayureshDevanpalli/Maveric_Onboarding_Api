@@ -101,10 +101,8 @@ public class ResumeService {
       processHeaders(document.getHeaderList(), resumeData.getHeaders().getCandidateName(),
           resumeData.getHeaders().getCandidatePosition());
 
-      // Process string
-      Map<String, String> placeholders = new HashMap<>();
-      placeholders.put("SUMMARY", resumeData.getProfessionalSummary());
-      processString(document, placeholders);
+      // Process summary
+      processSummary(document, "SUMMARY", resumeData.getProfessionalSummary());
 
       // Process bullet list
       processBulletList(document, "EXPERIENCE", resumeData.getProfessionalExperience());
@@ -167,6 +165,7 @@ public class ResumeService {
 
           createCellOfClientColumn(experience.getClient(), "Client: ", para);
           createCellOfClientColumn(experience.getProject(), "Project: ", para);
+          createCellOfClientColumn(experience.getRole(), "Role: ", para);
           createCellOfClientColumn(experience.getDuration(), "Duration: ", para);
           createCellOfClientColumn(experience.getLocation(), "Location: ", para);
           createCellOfClientColumn(String.join(", ", experience.getTools()), "Tools: ", para);
@@ -292,10 +291,10 @@ public class ResumeService {
     }
   }
 
-  private void processString(XWPFDocument document, Map<String, String> placeholders) {
+  private void processSummary(XWPFDocument document, String placeholder, String summary) {
     // Replace in body paragraphs
     for (XWPFParagraph paragraph : document.getParagraphs()) {
-      replaceInParagraph(paragraph, placeholders);
+      replaceInParagraph(paragraph, placeholder, summary);
     }
 
     // Replace in body tables
@@ -303,7 +302,7 @@ public class ResumeService {
       for (XWPFTableRow row : table.getRows()) {
         for (XWPFTableCell cell : row.getTableCells()) {
           for (XWPFParagraph paragraph : cell.getParagraphs()) {
-            replaceInParagraph(paragraph, placeholders);
+            replaceInParagraph(paragraph, placeholder, summary);
           }
         }
       }
@@ -338,16 +337,14 @@ public class ResumeService {
     }
   }
 
-  private void replaceInParagraph(XWPFParagraph paragraph, Map<String, String> placeholders) {
+  private void replaceInParagraph(XWPFParagraph paragraph, String placeholder, String summary) {
     System.out.println("replaceInParagraph called: " + paragraph.getText()); // Debug
     for (XWPFRun run : paragraph.getRuns()) {
       String text = run.getText(0);
       if (text != null) {
-        for (Map.Entry<String, String> entry : placeholders.entrySet()) {
-          if (text.contains(entry.getKey())) {
-            text = text.replace(entry.getKey(), entry.getValue());
-            System.out.println("Replacing text in body: " + text);
-          }
+        if (text.contains(placeholder)) {
+          text = text.replace(placeholder, summary);
+          System.out.println("Replacing text in body: " + text);
         }
         run.setText(text, 0);
       }
