@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -184,7 +185,7 @@ public class ResumeService {
 
           createDescriptionCell(experience.getDescription(), "Description: ", para);
           createResponsibilitiesCell(experience.getResponsibilities(),
-              "Responsibilities: ", para);
+              "Responsibilities: ", para, cell1);
 
         }
         if (table.getNumberOfRows() > 0) {
@@ -210,23 +211,28 @@ public class ResumeService {
     labelRun.setBold(true);
     labelRun.setText(label);
     labelRun.addBreak();
+
     XWPFRun valueRun = para.createRun();
     valueRun.setBold(false);
     valueRun.setText(value);
     valueRun.addBreak();
+    valueRun.addBreak();
   }
 
-  private void createResponsibilitiesCell(List<String> values, String label, XWPFParagraph para) {
-    XWPFRun labelRun = para.createRun();
+  private void createResponsibilitiesCell(List<String> values, String label, XWPFParagraph para, XWPFTableCell cell) {
+    // First paragraph for the label
+    XWPFParagraph labelPara = cell.getParagraphs().get(0);
+    XWPFRun labelRun = labelPara.createRun();
     labelRun.setBold(true);
     labelRun.setText(label);
-    labelRun.addBreak();
-    XWPFRun valueRun = para.createRun();
-    valueRun.setBold(false);
-    values.forEach(i -> {
-      valueRun.setText("\u2022 " + i);
-      valueRun.addBreak();
-    });
+
+    // Bullets — each in its own paragraph inside the cell
+    for (String value : values) {
+      XWPFParagraph bulletPara = cell.addParagraph(); // adds a new paragraph in the same cell
+      bulletPara.setIndentationLeft(300); // optional, for visual alignment
+      XWPFRun bulletRun = bulletPara.createRun();
+      bulletRun.setText("\u2022 " + value);
+    }
   }
 
   private void processCreditTable(XWPFDocument doc, String placeholder, List<Credit> credits) {
@@ -366,8 +372,7 @@ public class ResumeService {
   // ST End
   private String extractTextFromDocx(MultipartFile file) throws IOException {
     try (XWPFDocument doc = new XWPFDocument(file.getInputStream())) {
-      XWPFWordExtractor extractor = new XWPFWordExtractor(doc);
-      return extractor.getText();
+      return new XWPFWordExtractor(doc).getText();
     }
   }
 
