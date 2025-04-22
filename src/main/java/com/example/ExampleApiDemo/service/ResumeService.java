@@ -414,23 +414,19 @@ public class ResumeService {
 
   public SkillResponse extractSkills(SkillRequest request) {
     try {
-      String skillPrompt="";
+      String skillPrompt = "";
       Path path = Paths.get("src/main/resources/templates/skillPrompt.txt");
       skillPrompt = Files.readString(path);
       String prompt = skillPrompt + "\n\nResume JSON:\n" +
-              new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(request.getResumeData()) +
-              "\n\nJob Description:\n" + request.getJobDescription();
+          new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(request.getResumeData()) +
+          "\n\nJob Description:\n" + request.getJobDescription();
 
       Map<String, Object> body = Map.of(
-              "contents", List.of(
-                      Map.of("parts", List.of(
-                              Map.of("text", prompt)
-                      ))
-              ),
-              "generationConfig", Map.of(
-                      "temperature", 0.3
-              )
-      );
+          "contents", List.of(
+              Map.of("parts", List.of(
+                  Map.of("text", prompt)))),
+          "generationConfig", Map.of(
+              "temperature", 0.3));
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
@@ -439,8 +435,10 @@ public class ResumeService {
 
       ResponseEntity<String> response = restTemplate.postForEntity(API_URL, requestEntity, String.class);
       String json = extractJsonFromGeminiResponse(response.getBody());
-      if (json.startsWith("```json")) json = json.substring(7).trim();
-      if (json.endsWith("```")) json = json.substring(0, json.length() - 3).trim();
+      if (json.startsWith("```json"))
+        json = json.substring(7).trim();
+      if (json.endsWith("```"))
+        json = json.substring(0, json.length() - 3).trim();
       return new ObjectMapper().readValue(json, SkillResponse.class);
 
     } catch (Exception e) {

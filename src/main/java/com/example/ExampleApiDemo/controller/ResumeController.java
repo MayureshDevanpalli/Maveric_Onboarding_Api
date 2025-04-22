@@ -52,9 +52,8 @@ public class ResumeController {
     return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
   }
 
-  @PostMapping("/extract-skills")
+  @PostMapping("extract-skills")
   public ResponseEntity<SkillResponse> extractSkills(@RequestBody SkillRequest request) {
-    SkillResponse response = resumeService.extractSkills(request);
-    return ResponseEntity.ok(response);
+    return ResponseEntity.ok(resumeService.extractSkills(request));
   }
 }
