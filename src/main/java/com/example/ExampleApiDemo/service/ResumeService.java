@@ -1,9 +1,7 @@
 package com.example.ExampleApiDemo.service;
 
 import com.example.ExampleApiDemo.exceptions.GeminiException;
-import com.example.ExampleApiDemo.model.Credit;
-import com.example.ExampleApiDemo.model.ProjectExperience;
-import com.example.ExampleApiDemo.model.ResumeData;
+import com.example.ExampleApiDemo.model.*;
 import com.example.ExampleApiDemo.util.ResumeUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
@@ -34,6 +32,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 @Service
@@ -409,5 +410,41 @@ public class ResumeService {
       throw new RuntimeException("Failed to extract JSON from Gemini response", e);
     }
     return "{}";
+  }
+
+  public SkillResponse extractSkills(SkillRequest request) {
+    try {
+      String skillPrompt="";
+      Path path = Paths.get("src/main/resources/templates/skillPrompt.txt");
+      skillPrompt = Files.readString(path);
+      String prompt = skillPrompt + "\n\nResume JSON:\n" +
+              new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(request.getResumeData()) +
+              "\n\nJob Description:\n" + request.getJobDescription();
+
+      Map<String, Object> body = Map.of(
+              "contents", List.of(
+                      Map.of("parts", List.of(
+                              Map.of("text", prompt)
+                      ))
+              ),
+              "generationConfig", Map.of(
+                      "temperature", 0.3
+              )
+      );
+
+      HttpHeaders headers = new HttpHeaders();
+      headers.setContentType(MediaType.APPLICATION_JSON);
+
+      HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+      ResponseEntity<String> response = restTemplate.postForEntity(API_URL, requestEntity, String.class);
+      String json = extractJsonFromGeminiResponse(response.getBody());
+      if (json.startsWith("```json")) json = json.substring(7).trim();
+      if (json.endsWith("```")) json = json.substring(0, json.length() - 3).trim();
+      return new ObjectMapper().readValue(json, SkillResponse.class);
+
+    } catch (Exception e) {
+      throw new RuntimeException("Failed to extract skills using Gemini", e);
+    }
   }
 }

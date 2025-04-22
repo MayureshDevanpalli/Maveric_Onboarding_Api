@@ -1,6 +1,8 @@
 package com.example.ExampleApiDemo.controller;
 
 import com.example.ExampleApiDemo.model.ResumeData;
+import com.example.ExampleApiDemo.model.SkillRequest;
+import com.example.ExampleApiDemo.model.SkillResponse;
 import com.example.ExampleApiDemo.service.ResumeService;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,4 +52,9 @@ public class ResumeController {
     return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
   }
 
+  @PostMapping("/extract-skills")
+  public ResponseEntity<SkillResponse> extractSkills(@RequestBody SkillRequest request) {
+    SkillResponse response = resumeService.extractSkills(request);
+    return ResponseEntity.ok(response);
+  }
 }
