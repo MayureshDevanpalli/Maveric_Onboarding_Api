@@ -108,6 +108,9 @@ public class ResumeService {
       // Process bullet list
       processBulletList(document, "EXPERIENCE", resumeData.getProfessionalExperience());
 
+      // Process bullet list
+      processBulletList(document, "AWARDS", resumeData.getAwards());
+
       // Process certifications
       processBulletList(document, "CERTIFICATION", resumeData.getCertifications());
 
