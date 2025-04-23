@@ -8,6 +8,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
+import org.apache.poi.xwpf.usermodel.BodyElementType;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
 import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
@@ -18,7 +19,7 @@ import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlCursor;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -124,6 +125,9 @@ public class ResumeService {
       // Process project experience
       processProjectExperienceTable(document, "PROJECT_EXPERIENCE", resumeData.getProjectExperience());
 
+      // Remove blank sections
+      removeBlankSections(document, resumeData);
+
       document.write(out);
       return out.toByteArray();
 
@@ -131,6 +135,53 @@ public class ResumeService {
       log.error("Error while creating file: ", e);
     }
     return new byte[0];
+  }
+
+  private void removeBlankSections(XWPFDocument doc, ResumeData resumeData) {
+
+    if (resumeData.getAwards() == null || (resumeData.getAwards() != null && resumeData.getAwards().isEmpty())) {
+      removeSection("Awards & Recognitions", doc);
+    }
+    if (resumeData.getCertifications() == null
+        || (resumeData.getCertifications() != null && resumeData.getCertifications().isEmpty())) {
+      removeSection("Certifications and Courses", doc);
+    }
+    if (resumeData.getEducation() == null
+        || (resumeData.getEducation() != null && resumeData.getEducation().isEmpty())) {
+      removeSection("Educational Qualification", doc);
+    }
+    if (resumeData.getCredits() == null
+        || (resumeData.getCredits() != null && resumeData.getCredits().isEmpty())) {
+      removeSection("Credits", doc);
+    }
+    if (resumeData.getProjectExperience() == null
+        || (resumeData.getProjectExperience() != null && resumeData.getProjectExperience().isEmpty())) {
+      removeSection("Project Experience", doc);
+    }
+
+  }
+
+  private void removeSection(String sectionName, XWPFDocument doc) {
+    List<IBodyElement> bodyElements = doc.getBodyElements();
+
+    for (int i = 0; i < bodyElements.size(); i++) {
+      IBodyElement element = bodyElements.get(i);
+
+      if (element.getElementType() == BodyElementType.PARAGRAPH) {
+        XWPFParagraph paragraph = (XWPFParagraph) element;
+        String text = paragraph.getText().trim();
+
+        if (sectionName.equalsIgnoreCase(text)) {
+          // Check for shading
+          CTPPr pPr = paragraph.getCTP().getPPr();
+          if (pPr != null && pPr.isSetShd()) {
+            // Shading is present, remove the entire paragraph
+            doc.removeBodyElement(i);
+            i--; // Adjust index after removal
+          }
+        }
+      }
+    }
   }
 
   private void processProjectExperienceTable(XWPFDocument doc, String placeholder,
@@ -173,7 +224,9 @@ public class ResumeService {
           createCellOfClientColumn(experience.getRole(), "Role: ", para);
           createCellOfClientColumn(experience.getDuration(), "Duration: ", para);
           createCellOfClientColumn(experience.getLocation(), "Location: ", para);
-          createCellOfClientColumn(String.join(", ", experience.getTools()), "Tools: ", para);
+          createCellOfClientColumn(
+              String.join(", ", Objects.requireNonNullElse(experience.getTools(), Collections.emptyList())), "Tools: ",
+              para);
 
           cell0.getCTTc().addNewTcPr().addNewShd().setFill("d8d4d4");
 
@@ -439,12 +492,12 @@ public class ResumeService {
         json = json.substring(7).trim();
       if (json.endsWith("```"))
         json = json.substring(0, json.length() - 3).trim();
-      
-      SkillResponse skillResponse=new ObjectMapper().readValue(json, SkillResponse.class);
+
+      SkillResponse skillResponse = new ObjectMapper().readValue(json, SkillResponse.class);
       Collections.sort(skillResponse.getResumeSkill());
       Collections.sort(skillResponse.getMatchedSkills());
       Collections.sort(skillResponse.getRequiredSkills());
-      //return new ObjectMapper().readValue(json, SkillResponse.class);
+      // return new ObjectMapper().readValue(json, SkillResponse.class);
       return skillResponse;
 
     } catch (Exception e) {
