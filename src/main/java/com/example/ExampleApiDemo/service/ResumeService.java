@@ -401,8 +401,6 @@ public class ResumeService {
         if (!parts.isEmpty()) {
           Map<?, ?> textPart = (Map<?, ?>) parts.get(0);
           String fullText = textPart.get("text").toString().replace("```", "").replace("json", "");
-          System.out.println("-----------------------------------");
-          System.out.println(fullText);
           return fullText;
         }
       }
@@ -441,8 +439,12 @@ public class ResumeService {
       String json = extractJsonFromGeminiResponse(response.getBody());
       if (json.startsWith("```json")) json = json.substring(7).trim();
       if (json.endsWith("```")) json = json.substring(0, json.length() - 3).trim();
-      return new ObjectMapper().readValue(json, SkillResponse.class);
-
+      SkillResponse skillResponse=new ObjectMapper().readValue(json, SkillResponse.class);
+      Collections.sort(skillResponse.getResumeSkill());
+      Collections.sort(skillResponse.getMatchedSkills());
+      Collections.sort(skillResponse.getRequiredSkills());
+      //return new ObjectMapper().readValue(json, SkillResponse.class);
+      return skillResponse;
     } catch (Exception e) {
       throw new RuntimeException("Failed to extract skills using Gemini", e);
     }
