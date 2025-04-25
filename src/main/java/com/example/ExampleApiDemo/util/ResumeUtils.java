@@ -328,4 +328,57 @@ public class ResumeUtils {
 			"\r\n" + //
 			"</instructions>";
 
+	// new “raw formatter” prompt:
+	public static final String RAW_FORMATTER_PROMPT ="Extract the following resume text into a JSON object with exactly these top-level fields and subfields.  Do **not** paraphrase, summarize, or alter any wording—take each section verbatim:\n" +
+			"\n" +
+			"Resume text:\n" +
+			"{resume_text}\n" +
+			"\n" +
+			"Output JSON schema:\n" +
+			"{\n" +
+			"  \"headers\": {\n" +
+			"    \"candidateName\": string,         // full name from top of resume\n" +
+			"    \"candidatePosition\": string      // current role/title (if present; otherwise empty string)\n" +
+			"  },\n" +
+			"  \"professionalSummary\": string,     // the entire “PROFESSIONAL SUMMARY” paragraph\n" +
+			"  \"professionalExperience\": [        // list each bullet under “WORK EXPERIENCE” as a separate string\n" +
+			"    string, ...\n" +
+			"  ],\n" +
+			"  \"awards\": [                        // list any awards (if none, output [])\n" +
+			"    string, ...\n" +
+			"  ],\n" +
+			"  \"certifications\": [                // list any certifications (if none, [])\n" +
+			"    string, ...\n" +
+			"  ],\n" +
+			"  \"education\": [                     // list each education entry (institution + degree + dates) as a string\n" +
+			"    string, ...\n" +
+			"  ],\n" +
+			"  \"credits\": [                       // list skill-categories and items, e.g.:\n" +
+			"    {\n" +
+			"      \"category\": string,\n" +
+			"      \"items\": [ string, ... ]\n" +
+			"    }, ...\n" +
+			"  ],\n" +
+			"  \"projectExperience\": [             // if present, list each project as object with these keys:\n" +
+			"    {\n" +
+			"      \"client\": string,\n" +
+			"      \"project\": string,\n" +
+			"      \"role\": string,\n" +
+			"      \"duration\": string,\n" +
+			"      \"location\": string,\n" +
+			"      \"tools\": [ string, ... ],\n" +
+			"      \"description\": string,\n" +
+			"      \"responsibilities\": [ string, ... ]\n" +
+			"    }, ...\n" +
+			"  ]\n" +
+			"}\n" +
+			"\n" +
+			"Rules:\n" +
+			"1. Output **only** valid JSON matching this schema.\n" +
+			"2. Use empty arrays (`[]`) or `\"\"` for missing sections/fields.\n" +
+			"3. Do **not** add any extra keys or commentary.\n" +
+			"4. Preserve exact whitespace-trimmed text from the resume (no rewording).\n" +
+			"\n" +
+			"Provide the JSON object as your sole output.\n";
+
 }
