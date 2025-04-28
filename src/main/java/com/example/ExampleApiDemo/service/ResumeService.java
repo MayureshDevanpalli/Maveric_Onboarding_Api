@@ -131,10 +131,11 @@ public class ResumeService {
       processBulletList(document, "EDUCATION", resumeData.getEducation());
 
       // Process credits
-      // processCreditTable(document, "CREDITS", resumeData.getCredits());
+      processCreditTable(document, "CREDITS", resumeData.getCredits());
 
       // Process project experience
-      processProjectExperienceTable(document, "PROJECT_EXPERIENCE", resumeData.getProjectExperience());
+      processProjectExperienceTable(document, "PROJECT_EXPERIENCE",
+          resumeData.getProjectExperience());
 
       // Remove blank sections
       removeBlankSections(document, resumeData);
@@ -413,19 +414,24 @@ public class ResumeService {
 
         // Insert bullet paragraphs
         for (int j = 0; j < bulletPoints.size(); j++) {
-          XWPFParagraph newPara = doc.createParagraph();
+          XmlCursor cursor;
+          if (pos + j < doc.getParagraphs().size()) {
+            cursor = doc.getParagraphArray(pos + j).getCTP().newCursor();
+          } else {
+            // fallback if cursor cannot be found (at end of document)
+            cursor = doc.getDocument().getBody().newCursor();
+          }
+
+          XWPFParagraph newPara = doc.insertNewParagraph(cursor);
           newPara.setNumID(numId);
 
-          // Set paragraph spacing to remove extra gap
+          // Set paragraph spacing
           newPara.setSpacingBefore(0);
           newPara.setSpacingAfter(0);
           newPara.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 
           XWPFRun run = newPara.createRun();
           run.setText(bulletPoints.get(j));
-
-          // Insert at correct position
-          doc.setParagraph(newPara, Math.min(pos + j, doc.getParagraphs().size() - 1));
         }
 
         break; // Done processing
