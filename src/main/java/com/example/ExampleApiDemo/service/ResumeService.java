@@ -10,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.BodyElementType;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
-import org.apache.poi.xwpf.usermodel.ParagraphAlignment;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeader;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
@@ -27,7 +26,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -92,7 +90,47 @@ public class ResumeService {
       return new ObjectMapper().readValue(jsonResponse, ResumeData.class);
     } catch (Exception e) {
       log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
-      throw new GeminiException("Error while extracting resume data. Please try again later.");
+      throw new GeminiException("Error while extracting resume data. Please try again later.", e);
+    }
+  }
+
+  public ResumeData extractRawWithFormatterPrompt(MultipartFile file) throws IOException {
+    String fileName = file.getOriginalFilename();
+    String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
+
+    String resumeText = "";
+
+    if ("pdf".equals(extension)) {
+      resumeText = extractTextFromPdf(file);
+    } else if ("docx".equals(extension)) {
+      resumeText = extractTextFromDocx(file);
+    } else {
+      throw new IllegalArgumentException("Unsupported file type. Please upload a PDF or DOCX.");
+    }
+
+    String prompt = ResumeUtils.RAW_FORMATTER_PROMPT;
+
+    Map<String, Object> body = Map.of(
+            "contents", List.of(
+                    Map.of("parts", List.of(
+                            Map.of("text", prompt + "\n\n" + resumeText)))),
+            "generationConfig", Map.of(
+                    "temperature", 0.3
+                    // "maxOutputTokens", 1024
+            ));
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+
+    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+
+    try {
+      ResponseEntity<String> response = restTemplate.postForEntity(API_URL, request, String.class);
+      String jsonResponse = extractJsonFromGeminiResponse(response.getBody());
+      return new ObjectMapper().readValue(jsonResponse, ResumeData.class);
+    } catch (Exception e) {
+      log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
+      throw new GeminiException("Error while extracting resume data. Please try again later.",e);
     }
   }
 

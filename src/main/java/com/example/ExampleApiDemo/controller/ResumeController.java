@@ -56,4 +56,9 @@ public class ResumeController {
   public ResponseEntity<SkillResponse> extractSkills(@RequestBody SkillRequest request) {
     return ResponseEntity.ok(resumeService.extractSkills(request));
   }
+  @PostMapping("parseRawWithFormatter")
+  public ResponseEntity<ResumeData> extractRaw(@RequestParam("file") MultipartFile file) throws IOException {
+    ResumeData data = resumeService.extractRawWithFormatterPrompt(file);
+    return ResponseEntity.ok(data);
+  }
 }
