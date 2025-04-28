@@ -5,6 +5,7 @@ import com.example.ExampleApiDemo.model.SkillRequest;
 import com.example.ExampleApiDemo.model.SkillResponse;
 import com.example.ExampleApiDemo.service.ResumeService;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -43,12 +44,19 @@ public class ResumeController {
   @PostMapping("download-resume")
   public ResponseEntity<byte[]> downloadResume(@RequestBody ResumeData resumeData) throws IOException {
     byte[] bytes = resumeService.downloadResume(resumeData);
-    String fileName = resumeData.getHeaders().getCandidateName() + ".docx";
+
+    StringBuilder fileName = new StringBuilder();
+    fileName.append("Maveric_");
+    fileName.append(StringUtils.defaultString(resumeData.getHeaders().getCandidateName()));
+    fileName.append("_");
+    fileName.append(StringUtils.defaultString(resumeData.getHeaders().getCandidatePosition()));
+    fileName.append(".docx");
+
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
     headers.setContentDisposition(
-        ContentDisposition.attachment().filename(fileName).build());
-    headers.add("X-Filename", fileName);
+        ContentDisposition.attachment().filename(fileName.toString()).build());
+    headers.add("X-Filename", fileName.toString());
     return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
   }
 
