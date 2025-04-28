@@ -4,21 +4,32 @@ import com.example.ExampleApiDemo.exceptions.GeminiException;
 import com.example.ExampleApiDemo.model.*;
 import com.example.ExampleApiDemo.util.ResumeUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.BodyElementType;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.LineSpacingRule;
+import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeader;
+import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlCursor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTInd;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLevelText;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumFmt;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STJc;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -26,11 +37,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -118,7 +131,7 @@ public class ResumeService {
       processBulletList(document, "EDUCATION", resumeData.getEducation());
 
       // Process credits
-      processCreditTable(document, "CREDITS", resumeData.getCredits());
+      // processCreditTable(document, "CREDITS", resumeData.getCredits());
 
       // Process project experience
       processProjectExperienceTable(document, "PROJECT_EXPERIENCE", resumeData.getProjectExperience());
@@ -252,41 +265,47 @@ public class ResumeService {
   }
 
   private void createCellOfClientColumn(String value, String label, XWPFParagraph para) {
-    XWPFRun labelRun = para.createRun();
-    labelRun.setBold(true);
-    labelRun.setText(label);
-    XWPFRun valueRun = para.createRun();
-    valueRun.setBold(false);
-    valueRun.setText(value);
-    valueRun.addBreak();
+    if (StringUtils.hasText(value)) {
+      XWPFRun labelRun = para.createRun();
+      labelRun.setBold(true);
+      labelRun.setText(label);
+      XWPFRun valueRun = para.createRun();
+      valueRun.setBold(false);
+      valueRun.setText(value);
+      valueRun.addBreak();
+    }
   }
 
   private void createDescriptionCell(String value, String label, XWPFParagraph para) {
-    XWPFRun labelRun = para.createRun();
-    labelRun.setBold(true);
-    labelRun.setText(label);
-    labelRun.addBreak();
+    if (StringUtils.hasText(value)) {
+      XWPFRun labelRun = para.createRun();
+      labelRun.setBold(true);
+      labelRun.setText(label);
+      labelRun.addBreak();
 
-    XWPFRun valueRun = para.createRun();
-    valueRun.setBold(false);
-    valueRun.setText(value);
-    valueRun.addBreak();
-    valueRun.addBreak();
+      XWPFRun valueRun = para.createRun();
+      valueRun.setBold(false);
+      valueRun.setText(value);
+      valueRun.addBreak();
+      valueRun.addBreak();
+    }
   }
 
   private void createResponsibilitiesCell(List<String> values, String label, XWPFParagraph para, XWPFTableCell cell) {
     // First paragraph for the label
-    XWPFParagraph labelPara = cell.getParagraphs().get(0);
-    XWPFRun labelRun = labelPara.createRun();
-    labelRun.setBold(true);
-    labelRun.setText(label);
+    if (!values.isEmpty()) {
+      XWPFParagraph labelPara = cell.getParagraphs().get(0);
+      XWPFRun labelRun = labelPara.createRun();
+      labelRun.setBold(true);
+      labelRun.setText(label);
 
-    // Bullets — each in its own paragraph inside the cell
-    for (String value : values) {
-      XWPFParagraph bulletPara = cell.addParagraph(); // adds a new paragraph in the same cell
-      bulletPara.setIndentationLeft(300); // optional, for visual alignment
-      XWPFRun bulletRun = bulletPara.createRun();
-      bulletRun.setText("\u2022 " + value);
+      // Bullets — each in its own paragraph inside the cell
+      for (String value : values) {
+        XWPFParagraph bulletPara = cell.addParagraph(); // adds a new paragraph in the same cell
+        bulletPara.setIndentationLeft(300); // optional, for visual alignment
+        XWPFRun bulletRun = bulletPara.createRun();
+        bulletRun.setText("\u2022 " + value);
+      }
     }
   }
 
@@ -373,6 +392,15 @@ public class ResumeService {
   private void processBulletList(XWPFDocument doc, String placeholder, List<String> bulletPoints) {
     List<XWPFParagraph> paragraphs = doc.getParagraphs();
 
+    // Create numbering if needed
+    XWPFNumbering numbering = doc.getNumbering();
+    if (numbering == null) {
+      numbering = doc.createNumbering();
+    }
+
+    // Check if bullet AbstractNum already exists
+    BigInteger numId = getOrCreateBulletNumbering(doc, numbering);
+
     for (int i = 0; i < paragraphs.size(); i++) {
       XWPFParagraph para = paragraphs.get(i);
       String text = para.getText();
@@ -380,45 +408,88 @@ public class ResumeService {
       if (text != null && text.contains(placeholder)) {
         int pos = doc.getPosOfParagraph(para);
 
-        // Remove the placeholder
+        // Remove the placeholder paragraph
         doc.removeBodyElement(pos);
 
-        // Insert bullet paragraphs at the same position
+        // Insert bullet paragraphs
         for (int j = 0; j < bulletPoints.size(); j++) {
-          XWPFParagraph newPara = doc.insertNewParagraph(
-              doc.getParagraphArray(Math.min(pos + j, doc.getParagraphs().size() - 1)).getCTP().newCursor());
-          newPara.setStyle("ListBullet");
+          XWPFParagraph newPara = doc.createParagraph();
+          newPara.setNumID(numId);
+
+          // Set paragraph spacing to remove extra gap
+          newPara.setSpacingBefore(0);
+          newPara.setSpacingAfter(0);
+          newPara.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 
           XWPFRun run = newPara.createRun();
-          run.setText("\u2022 " + bulletPoints.get(j));
+          run.setText(bulletPoints.get(j));
+
+          // Insert at correct position
+          doc.setParagraph(newPara, Math.min(pos + j, doc.getParagraphs().size() - 1));
         }
 
-        break;
+        break; // Done processing
       }
     }
   }
 
+  private BigInteger getOrCreateBulletNumbering(XWPFDocument doc, XWPFNumbering numbering) {
+    // Try to reuse existing numbering if available
+    for (XWPFAbstractNum absNum : numbering.getAbstractNums()) {
+      CTAbstractNum ctAbsNum = absNum.getCTAbstractNum();
+      if (ctAbsNum.getLvlArray(0).getNumFmt().getVal() == STNumberFormat.BULLET) {
+        BigInteger abstractNumId = ctAbsNum.getAbstractNumId();
+        return numbering.addNum(abstractNumId);
+      }
+    }
+
+    // Create new bullet numbering
+    CTAbstractNum abstractNum = CTAbstractNum.Factory.newInstance();
+    abstractNum.setAbstractNumId(BigInteger.valueOf(numbering.getAbstractNums().size())); // unique id
+
+    CTLvl lvl = abstractNum.addNewLvl();
+    lvl.setIlvl(BigInteger.ZERO);
+
+    CTNumFmt numFmt = lvl.addNewNumFmt();
+    numFmt.setVal(STNumberFormat.BULLET);
+
+    CTLevelText lvlText = lvl.addNewLvlText();
+    lvlText.setVal("•"); // bullet symbol
+
+    lvl.addNewLvlJc().setVal(STJc.LEFT);
+
+    CTInd ind = lvl.addNewPPr().addNewInd();
+    ind.setLeft(BigInteger.valueOf(720)); // indent
+    ind.setHanging(BigInteger.valueOf(360)); // hanging indent
+
+    XWPFAbstractNum bulletAbstractNum = new XWPFAbstractNum(abstractNum);
+
+    BigInteger abstractNumID = numbering.addAbstractNum(bulletAbstractNum);
+    return numbering.addNum(abstractNumID);
+  }
+
   private void replaceInParagraph(XWPFParagraph paragraph, String placeholder, String summary) {
-    System.out.println("replaceInParagraph called: " + paragraph.getText()); // Debug
-    for (XWPFRun run : paragraph.getRuns()) {
-      String text = run.getText(0);
-      if (text != null) {
-        if (text.contains(placeholder)) {
-          text = text.replace(placeholder, summary);
-          System.out.println("Replacing text in body: " + text);
+    if (StringUtils.hasText(summary)) {
+      for (XWPFRun run : paragraph.getRuns()) {
+        String text = run.getText(0);
+        if (text != null) {
+          if (text.contains(placeholder)) {
+            text = text.replace(placeholder, summary);
+          }
+          run.setText(text, 0);
         }
-        run.setText(text, 0);
       }
     }
   }
 
   private void replaceTextInCell(XWPFTableCell cell, String placeholder, String value) {
-    for (XWPFParagraph paragraph : cell.getParagraphs()) {
-      for (XWPFRun run : paragraph.getRuns()) {
-        String text = run.getText(0);
-        if (text != null && text.contains(placeholder)) {
-          System.out.println("Replacing text in headers: " + text.replace(placeholder, value)); // Debug
-          run.setText(text.replace(placeholder, value), 0);
+    if (StringUtils.hasText(value)) {
+      for (XWPFParagraph paragraph : cell.getParagraphs()) {
+        for (XWPFRun run : paragraph.getRuns()) {
+          String text = run.getText(0);
+          if (text != null && text.contains(placeholder)) {
+            run.setText(text.replace(placeholder, value), 0);
+          }
         }
       }
     }
@@ -484,19 +555,23 @@ public class ResumeService {
 
       ResponseEntity<String> response = restTemplate.postForEntity(API_URL, requestEntity, String.class);
       String json = extractJsonFromGeminiResponse(response.getBody());
+      if (json.startsWith("```json"))
+        json = json.substring(7).trim();
+      if (json.endsWith("```"))
+        json = json.substring(0, json.length() - 3).trim();
 
-      if (json.startsWith("```json")) json = json.substring(7).trim();
-      if (json.endsWith("```")) json = json.substring(0, json.length() - 3).trim();
-      SkillResponse skillResponse=new ObjectMapper().readValue(json, SkillResponse.class);
+      SkillResponse skillResponse = new ObjectMapper().readValue(json, SkillResponse.class);
       Collections.sort(skillResponse.getResumeSkill());
       Collections.sort(skillResponse.getMatchedSkills());
       Collections.sort(skillResponse.getRequiredSkills());
-      //return new ObjectMapper().readValue(json, SkillResponse.class);
+      // return new ObjectMapper().readValue(json, SkillResponse.class);
       return skillResponse;
+
     } catch (Exception e) {
       throw new RuntimeException("Failed to extract skills using Gemini", e);
     }
   }
+
   public ResumeData extractRawWithFormatterPrompt(MultipartFile file) throws IOException {
     String fileName = file.getOriginalFilename();
     String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
@@ -514,13 +589,13 @@ public class ResumeService {
     String prompt = ResumeUtils.RAW_FORMATTER_PROMPT;
 
     Map<String, Object> body = Map.of(
-            "contents", List.of(
-                    Map.of("parts", List.of(
-                            Map.of("text", prompt + "\n\n" + resumeText)))),
-            "generationConfig", Map.of(
-                    "temperature", 0.3
-                    // "maxOutputTokens", 1024
-            ));
+        "contents", List.of(
+            Map.of("parts", List.of(
+                Map.of("text", prompt + "\n\n" + resumeText)))),
+        "generationConfig", Map.of(
+            "temperature", 0.3
+        // "maxOutputTokens", 1024
+        ));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
