@@ -381,4 +381,6 @@ public class ResumeUtils {
 			"\n" +
 			"Provide the JSON object as your sole output.\n";
 
+
 }
+

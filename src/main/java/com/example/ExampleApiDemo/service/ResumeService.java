@@ -4,21 +4,35 @@ import com.example.ExampleApiDemo.exceptions.GeminiException;
 import com.example.ExampleApiDemo.model.*;
 import com.example.ExampleApiDemo.util.ResumeUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.poi.xwpf.extractor.XWPFWordExtractor;
 import org.apache.poi.xwpf.usermodel.BodyElementType;
 import org.apache.poi.xwpf.usermodel.IBodyElement;
+import org.apache.poi.xwpf.usermodel.LineSpacingRule;
+import org.apache.poi.xwpf.usermodel.XWPFAbstractNum;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.apache.poi.xwpf.usermodel.XWPFHeader;
+import org.apache.poi.xwpf.usermodel.XWPFNumbering;
 import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.apache.poi.xwpf.usermodel.XWPFRun;
 import org.apache.poi.xwpf.usermodel.XWPFTable;
 import org.apache.poi.xwpf.usermodel.XWPFTableCell;
 import org.apache.poi.xwpf.usermodel.XWPFTableRow;
 import org.apache.xmlbeans.XmlCursor;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTAbstractNum;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTInd;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLevelText;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumFmt;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblWidth;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STJc;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -26,11 +40,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -111,13 +127,13 @@ public class ResumeService {
     String prompt = ResumeUtils.RAW_FORMATTER_PROMPT;
 
     Map<String, Object> body = Map.of(
-            "contents", List.of(
-                    Map.of("parts", List.of(
-                            Map.of("text", prompt + "\n\n" + resumeText)))),
-            "generationConfig", Map.of(
-                    "temperature", 0.3
-                    // "maxOutputTokens", 1024
-            ));
+        "contents", List.of(
+            Map.of("parts", List.of(
+                Map.of("text", prompt + "\n\n" + resumeText)))),
+        "generationConfig", Map.of(
+            "temperature", 0.3
+        // "maxOutputTokens", 1024
+        ));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -130,7 +146,7 @@ public class ResumeService {
       return new ObjectMapper().readValue(jsonResponse, ResumeData.class);
     } catch (Exception e) {
       log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
-      throw new GeminiException("Error while extracting resume data. Please try again later.",e);
+      throw new GeminiException("Error while extracting resume data. Please try again later.", e);
     }
   }
 
@@ -161,7 +177,8 @@ public class ResumeService {
       processCreditTable(document, "CREDITS", resumeData.getCredits());
 
       // Process project experience
-      processProjectExperienceTable(document, "PROJECT_EXPERIENCE", resumeData.getProjectExperience());
+      processProjectExperienceTable(document, "PROJECT_EXPERIENCE",
+          resumeData.getProjectExperience());
 
       // Remove blank sections
       removeBlankSections(document, resumeData);
@@ -266,6 +283,12 @@ public class ResumeService {
               String.join(", ", Objects.requireNonNullElse(experience.getTools(), Collections.emptyList())), "Tools: ",
               para);
 
+          // Set width for first column
+          CTTcPr tcPr = cell0.getCTTc().addNewTcPr();
+          CTTblWidth width = tcPr.addNewTcW();
+          width.setW(BigInteger.valueOf(3000)); // width in TWIPS (1/20th of a point)
+          width.setType(STTblWidth.DXA);
+
           cell0.getCTTc().addNewTcPr().addNewShd().setFill("d8d4d4");
 
           // Ensure all cells are created before setting text
@@ -280,7 +303,7 @@ public class ResumeService {
 
           createDescriptionCell(experience.getDescription(), "Description: ", para);
           createResponsibilitiesCell(experience.getResponsibilities(),
-              "Responsibilities: ", para, cell1);
+              "Responsibilities: ", doc, cell1);
 
         }
         if (table.getNumberOfRows() > 0) {
@@ -292,41 +315,64 @@ public class ResumeService {
   }
 
   private void createCellOfClientColumn(String value, String label, XWPFParagraph para) {
-    XWPFRun labelRun = para.createRun();
-    labelRun.setBold(true);
-    labelRun.setText(label);
-    XWPFRun valueRun = para.createRun();
-    valueRun.setBold(false);
-    valueRun.setText(value);
-    valueRun.addBreak();
+    if (StringUtils.hasText(value)) {
+      XWPFRun labelRun = para.createRun();
+      labelRun.setBold(true);
+      labelRun.setText(label);
+      XWPFRun valueRun = para.createRun();
+      valueRun.setBold(false);
+      valueRun.setText(value);
+      valueRun.addBreak();
+    }
   }
 
   private void createDescriptionCell(String value, String label, XWPFParagraph para) {
-    XWPFRun labelRun = para.createRun();
-    labelRun.setBold(true);
-    labelRun.setText(label);
-    labelRun.addBreak();
+    if (StringUtils.hasText(value)) {
+      XWPFRun labelRun = para.createRun();
+      labelRun.setBold(true);
+      labelRun.setText(label);
+      labelRun.addBreak();
 
-    XWPFRun valueRun = para.createRun();
-    valueRun.setBold(false);
-    valueRun.setText(value);
-    valueRun.addBreak();
-    valueRun.addBreak();
+      XWPFRun valueRun = para.createRun();
+      valueRun.setBold(false);
+      valueRun.setText(value);
+      valueRun.addBreak();
+      valueRun.addBreak();
+    }
   }
 
-  private void createResponsibilitiesCell(List<String> values, String label, XWPFParagraph para, XWPFTableCell cell) {
-    // First paragraph for the label
-    XWPFParagraph labelPara = cell.getParagraphs().get(0);
-    XWPFRun labelRun = labelPara.createRun();
-    labelRun.setBold(true);
-    labelRun.setText(label);
+  private void createResponsibilitiesCell(List<String> values, String label, XWPFDocument doc, XWPFTableCell cell) {
+    if (!values.isEmpty()) {
+      // Get the first paragraph (default) inside the cell
+      XWPFParagraph labelPara = cell.getParagraphs().get(0);
+      XWPFRun labelRun = labelPara.createRun();
+      labelRun.setBold(true);
+      labelRun.setText(label);
 
-    // Bullets — each in its own paragraph inside the cell
-    for (String value : values) {
-      XWPFParagraph bulletPara = cell.addParagraph(); // adds a new paragraph in the same cell
-      bulletPara.setIndentationLeft(300); // optional, for visual alignment
-      XWPFRun bulletRun = bulletPara.createRun();
-      bulletRun.setText("\u2022 " + value);
+      labelPara.setSpacingAfter(0);
+
+      // Create numbering if not exists
+      XWPFNumbering numbering = doc.getNumbering();
+      if (numbering == null) {
+        numbering = doc.createNumbering();
+      }
+
+      // Create bullet list style if not exists
+      BigInteger numId = getOrCreateBulletNumbering(doc, numbering);
+
+      // Add bullets
+      for (String value : values) {
+        XWPFParagraph bulletPara = cell.addParagraph();
+        bulletPara.setNumID(numId); // ✨ IMPORTANT: set bullet numbering
+
+        // Set paragraph spacing for cleaner look (optional)
+        bulletPara.setSpacingBefore(0);
+        bulletPara.setSpacingAfter(0);
+        bulletPara.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+
+        XWPFRun bulletRun = bulletPara.createRun();
+        bulletRun.setText(value);
+      }
     }
   }
 
@@ -350,10 +396,15 @@ public class ResumeService {
 
           // Add rows for each Credit object
 
-          System.out.println("credits: " + credits); // Debug
           for (Credit credit : credits) {
             XWPFTableRow row = table.createRow();
             XWPFTableCell cell1 = row.getCell(0);
+
+            // Set width for first column
+            CTTcPr tcPr = cell1.getCTTc().addNewTcPr();
+            CTTblWidth width = tcPr.addNewTcW();
+            width.setW(BigInteger.valueOf(3000)); // width in TWIPS (1/20th of a point)
+            width.setType(STTblWidth.DXA);
 
             // Set the background color of the first column to red
             cell1.getCTTc().addNewTcPr().addNewShd().setFill("d8d4d4");
@@ -413,6 +464,15 @@ public class ResumeService {
   private void processBulletList(XWPFDocument doc, String placeholder, List<String> bulletPoints) {
     List<XWPFParagraph> paragraphs = doc.getParagraphs();
 
+    // Create numbering if needed
+    XWPFNumbering numbering = doc.getNumbering();
+    if (numbering == null) {
+      numbering = doc.createNumbering();
+    }
+
+    // Check if bullet AbstractNum already exists
+    BigInteger numId = getOrCreateBulletNumbering(doc, numbering);
+
     for (int i = 0; i < paragraphs.size(); i++) {
       XWPFParagraph para = paragraphs.get(i);
       String text = para.getText();
@@ -420,45 +480,93 @@ public class ResumeService {
       if (text != null && text.contains(placeholder)) {
         int pos = doc.getPosOfParagraph(para);
 
-        // Remove the placeholder
+        // Remove the placeholder paragraph
         doc.removeBodyElement(pos);
 
-        // Insert bullet paragraphs at the same position
+        // Insert bullet paragraphs
         for (int j = 0; j < bulletPoints.size(); j++) {
-          XWPFParagraph newPara = doc.insertNewParagraph(
-              doc.getParagraphArray(Math.min(pos + j, doc.getParagraphs().size() - 1)).getCTP().newCursor());
-          newPara.setStyle("ListBullet");
+          XmlCursor cursor;
+          if (pos + j < doc.getParagraphs().size()) {
+            cursor = doc.getParagraphArray(pos + j).getCTP().newCursor();
+          } else {
+            // fallback if cursor cannot be found (at end of document)
+            cursor = doc.getDocument().getBody().newCursor();
+          }
+
+          XWPFParagraph newPara = doc.insertNewParagraph(cursor);
+          newPara.setNumID(numId);
+
+          // Set paragraph spacing
+          newPara.setSpacingBefore(0);
+          newPara.setSpacingAfter(0);
+          newPara.setSpacingBetween(1.0, LineSpacingRule.AUTO);
 
           XWPFRun run = newPara.createRun();
-          run.setText("\u2022 " + bulletPoints.get(j));
+          run.setText(bulletPoints.get(j));
         }
 
-        break;
+        break; // Done processing
       }
     }
   }
 
+  private BigInteger getOrCreateBulletNumbering(XWPFDocument doc, XWPFNumbering numbering) {
+    // Try to reuse existing numbering if available
+    for (XWPFAbstractNum absNum : numbering.getAbstractNums()) {
+      CTAbstractNum ctAbsNum = absNum.getCTAbstractNum();
+      if (ctAbsNum.getLvlArray(0).getNumFmt().getVal() == STNumberFormat.BULLET) {
+        BigInteger abstractNumId = ctAbsNum.getAbstractNumId();
+        return numbering.addNum(abstractNumId);
+      }
+    }
+
+    // Create new bullet numbering
+    CTAbstractNum abstractNum = CTAbstractNum.Factory.newInstance();
+    abstractNum.setAbstractNumId(BigInteger.valueOf(numbering.getAbstractNums().size())); // unique id
+
+    CTLvl lvl = abstractNum.addNewLvl();
+    lvl.setIlvl(BigInteger.ZERO);
+
+    CTNumFmt numFmt = lvl.addNewNumFmt();
+    numFmt.setVal(STNumberFormat.BULLET);
+
+    CTLevelText lvlText = lvl.addNewLvlText();
+    lvlText.setVal("•"); // bullet symbol
+
+    lvl.addNewLvlJc().setVal(STJc.LEFT);
+
+    CTInd ind = lvl.addNewPPr().addNewInd();
+    ind.setLeft(BigInteger.valueOf(720)); // indent
+    ind.setHanging(BigInteger.valueOf(360)); // hanging indent
+
+    XWPFAbstractNum bulletAbstractNum = new XWPFAbstractNum(abstractNum);
+
+    BigInteger abstractNumID = numbering.addAbstractNum(bulletAbstractNum);
+    return numbering.addNum(abstractNumID);
+  }
+
   private void replaceInParagraph(XWPFParagraph paragraph, String placeholder, String summary) {
-    System.out.println("replaceInParagraph called: " + paragraph.getText()); // Debug
-    for (XWPFRun run : paragraph.getRuns()) {
-      String text = run.getText(0);
-      if (text != null) {
-        if (text.contains(placeholder)) {
-          text = text.replace(placeholder, summary);
-          System.out.println("Replacing text in body: " + text);
+    if (StringUtils.hasText(summary)) {
+      for (XWPFRun run : paragraph.getRuns()) {
+        String text = run.getText(0);
+        if (text != null) {
+          if (text.contains(placeholder)) {
+            text = text.replace(placeholder, summary);
+          }
+          run.setText(text, 0);
         }
-        run.setText(text, 0);
       }
     }
   }
 
   private void replaceTextInCell(XWPFTableCell cell, String placeholder, String value) {
-    for (XWPFParagraph paragraph : cell.getParagraphs()) {
-      for (XWPFRun run : paragraph.getRuns()) {
-        String text = run.getText(0);
-        if (text != null && text.contains(placeholder)) {
-          System.out.println("Replacing text in headers: " + text.replace(placeholder, value)); // Debug
-          run.setText(text.replace(placeholder, value), 0);
+    if (StringUtils.hasText(value)) {
+      for (XWPFParagraph paragraph : cell.getParagraphs()) {
+        for (XWPFRun run : paragraph.getRuns()) {
+          String text = run.getText(0);
+          if (text != null && text.contains(placeholder)) {
+            run.setText(text.replace(placeholder, value), 0);
+          }
         }
       }
     }
@@ -492,8 +600,6 @@ public class ResumeService {
         if (!parts.isEmpty()) {
           Map<?, ?> textPart = (Map<?, ?>) parts.get(0);
           String fullText = textPart.get("text").toString().replace("```", "").replace("json", "");
-          System.out.println("-----------------------------------");
-          System.out.println(fullText);
           return fullText;
         }
       }
@@ -542,4 +648,5 @@ public class ResumeService {
       throw new RuntimeException("Failed to extract skills using Gemini", e);
     }
   }
+
 }
