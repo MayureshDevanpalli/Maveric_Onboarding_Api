@@ -3,6 +3,7 @@ package com.example.ExampleApiDemo.controller;
 import com.example.ExampleApiDemo.model.ResumeData;
 import com.example.ExampleApiDemo.model.SkillRequest;
 import com.example.ExampleApiDemo.model.SkillResponse;
+import com.example.ExampleApiDemo.service.DownloadService;
 import com.example.ExampleApiDemo.service.ResumeService;
 
 import org.apache.commons.lang3.StringUtils;
@@ -28,11 +29,12 @@ import java.io.IOException;
 
 public class ResumeController {
 
-  @Autowired
   private final ResumeService resumeService;
+  private final DownloadService downloadService;
 
-  public ResumeController(ResumeService resumeService) {
+  public ResumeController(ResumeService resumeService, DownloadService downloadService) {
     this.resumeService = resumeService;
+    this.downloadService = downloadService;
   }
 
   @PostMapping("parse")
@@ -43,21 +45,24 @@ public class ResumeController {
 
   @PostMapping("download-resume")
   public ResponseEntity<byte[]> downloadResume(@RequestBody ResumeData resumeData) throws IOException {
-    byte[] bytes = resumeService.downloadResume(resumeData);
-
-    StringBuilder fileName = new StringBuilder();
-    fileName.append("Maveric_");
-    fileName.append(StringUtils.defaultString(resumeData.getHeaders().getCandidateName()));
-    fileName.append("_");
-    fileName.append(StringUtils.defaultString(resumeData.getHeaders().getCandidatePosition()));
-    fileName.append(".docx");
-
+    byte[] bytes = downloadService.downloadResume(resumeData);
+    StringBuilder fileName = getFileName(resumeData);
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
     headers.setContentDisposition(
         ContentDisposition.attachment().filename(fileName.toString()).build());
     headers.add("X-Filename", fileName.toString());
     return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
+  }
+
+  private StringBuilder getFileName(ResumeData resumeData) {
+    StringBuilder fileName = new StringBuilder();
+    fileName.append("Maveric_");
+    fileName.append(StringUtils.defaultString(resumeData.getHeaders().getCandidateName()));
+    fileName.append("_");
+    fileName.append(StringUtils.defaultString(resumeData.getHeaders().getCandidatePosition()));
+    fileName.append(".docx");
+    return fileName;
   }
 
   @PostMapping("extract-skills")
