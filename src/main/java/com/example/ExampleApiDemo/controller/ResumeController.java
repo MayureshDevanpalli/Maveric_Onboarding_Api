@@ -68,5 +68,6 @@ public class ResumeController {
   @PostMapping("parse-raw-resume")
   public ResponseEntity<ResumeData> extractRaw(@RequestParam("file") MultipartFile file) throws IOException {
     return ResponseEntity.ok(resumeService.extractRawWithFormatterPrompt(file));
+
   }
 }
