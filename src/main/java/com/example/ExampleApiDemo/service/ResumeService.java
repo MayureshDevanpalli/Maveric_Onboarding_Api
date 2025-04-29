@@ -28,8 +28,11 @@ import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLevelText;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTLvl;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTNumFmt;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTPPr;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTblWidth;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.CTTcPr;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STJc;
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STNumberFormat;
+import org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
@@ -240,6 +243,12 @@ public class ResumeService {
               String.join(", ", Objects.requireNonNullElse(experience.getTools(), Collections.emptyList())), "Tools: ",
               para);
 
+          // Set width for first column
+          CTTcPr tcPr = cell0.getCTTc().addNewTcPr();
+          CTTblWidth width = tcPr.addNewTcW();
+          width.setW(BigInteger.valueOf(3000)); // width in TWIPS (1/20th of a point)
+          width.setType(STTblWidth.DXA);
+
           cell0.getCTTc().addNewTcPr().addNewShd().setFill("d8d4d4");
 
           // Ensure all cells are created before setting text
@@ -254,7 +263,7 @@ public class ResumeService {
 
           createDescriptionCell(experience.getDescription(), "Description: ", para);
           createResponsibilitiesCell(experience.getResponsibilities(),
-              "Responsibilities: ", para, cell1);
+              "Responsibilities: ", doc, cell1);
 
         }
         if (table.getNumberOfRows() > 0) {
@@ -292,20 +301,37 @@ public class ResumeService {
     }
   }
 
-  private void createResponsibilitiesCell(List<String> values, String label, XWPFParagraph para, XWPFTableCell cell) {
-    // First paragraph for the label
+  private void createResponsibilitiesCell(List<String> values, String label, XWPFDocument doc, XWPFTableCell cell) {
     if (!values.isEmpty()) {
+      // Get the first paragraph (default) inside the cell
       XWPFParagraph labelPara = cell.getParagraphs().get(0);
       XWPFRun labelRun = labelPara.createRun();
       labelRun.setBold(true);
       labelRun.setText(label);
 
-      // Bullets — each in its own paragraph inside the cell
+      labelPara.setSpacingAfter(0);
+
+      // Create numbering if not exists
+      XWPFNumbering numbering = doc.getNumbering();
+      if (numbering == null) {
+        numbering = doc.createNumbering();
+      }
+
+      // Create bullet list style if not exists
+      BigInteger numId = getOrCreateBulletNumbering(doc, numbering);
+
+      // Add bullets
       for (String value : values) {
-        XWPFParagraph bulletPara = cell.addParagraph(); // adds a new paragraph in the same cell
-        bulletPara.setIndentationLeft(300); // optional, for visual alignment
+        XWPFParagraph bulletPara = cell.addParagraph();
+        bulletPara.setNumID(numId); // ✨ IMPORTANT: set bullet numbering
+
+        // Set paragraph spacing for cleaner look (optional)
+        bulletPara.setSpacingBefore(0);
+        bulletPara.setSpacingAfter(0);
+        bulletPara.setSpacingBetween(1.0, LineSpacingRule.AUTO);
+
         XWPFRun bulletRun = bulletPara.createRun();
-        bulletRun.setText("\u2022 " + value);
+        bulletRun.setText(value);
       }
     }
   }
@@ -330,10 +356,15 @@ public class ResumeService {
 
           // Add rows for each Credit object
 
-          System.out.println("credits: " + credits); // Debug
           for (Credit credit : credits) {
             XWPFTableRow row = table.createRow();
             XWPFTableCell cell1 = row.getCell(0);
+
+            // Set width for first column
+            CTTcPr tcPr = cell1.getCTTc().addNewTcPr();
+            CTTblWidth width = tcPr.addNewTcW();
+            width.setW(BigInteger.valueOf(3000)); // width in TWIPS (1/20th of a point)
+            width.setType(STTblWidth.DXA);
 
             // Set the background color of the first column to red
             cell1.getCTTc().addNewTcPr().addNewShd().setFill("d8d4d4");
