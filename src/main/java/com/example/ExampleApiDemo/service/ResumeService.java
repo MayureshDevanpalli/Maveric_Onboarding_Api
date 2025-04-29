@@ -127,13 +127,13 @@ public class ResumeService {
     String prompt = ResumeUtils.RAW_FORMATTER_PROMPT;
 
     Map<String, Object> body = Map.of(
-            "contents", List.of(
-                    Map.of("parts", List.of(
-                            Map.of("text", prompt + "\n\n" + resumeText)))),
-            "generationConfig", Map.of(
-                    "temperature", 0.3
-                    // "maxOutputTokens", 1024
-            ));
+        "contents", List.of(
+            Map.of("parts", List.of(
+                Map.of("text", prompt + "\n\n" + resumeText)))),
+        "generationConfig", Map.of(
+            "temperature", 0.3
+        // "maxOutputTokens", 1024
+        ));
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -146,7 +146,7 @@ public class ResumeService {
       return new ObjectMapper().readValue(jsonResponse, ResumeData.class);
     } catch (Exception e) {
       log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
-      throw new GeminiException("Error while extracting resume data. Please try again later.",e);
+      throw new GeminiException("Error while extracting resume data. Please try again later.", e);
     }
   }
 
@@ -649,43 +649,4 @@ public class ResumeService {
     }
   }
 
-  public ResumeData extractRawWithFormatterPrompt(MultipartFile file) throws IOException {
-    String fileName = file.getOriginalFilename();
-    String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-
-    String resumeText = "";
-
-    if ("pdf".equals(extension)) {
-      resumeText = extractTextFromPdf(file);
-    } else if ("docx".equals(extension)) {
-      resumeText = extractTextFromDocx(file);
-    } else {
-      throw new IllegalArgumentException("Unsupported file type. Please upload a PDF or DOCX.");
-    }
-
-    String prompt = ResumeUtils.RAW_FORMATTER_PROMPT;
-
-    Map<String, Object> body = Map.of(
-        "contents", List.of(
-            Map.of("parts", List.of(
-                Map.of("text", prompt + "\n\n" + resumeText)))),
-        "generationConfig", Map.of(
-            "temperature", 0.3
-        // "maxOutputTokens", 1024
-        ));
-
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-    try {
-      ResponseEntity<String> response = restTemplate.postForEntity(API_URL, request, String.class);
-      String jsonResponse = extractJsonFromGeminiResponse(response.getBody());
-      return new ObjectMapper().readValue(jsonResponse, ResumeData.class);
-    } catch (Exception e) {
-      log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
-      throw new GeminiException("Error while extracting resume data. Please try again later.", e);
-    }
-  }
 }
