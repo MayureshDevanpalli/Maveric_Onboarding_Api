@@ -303,7 +303,7 @@ public class DownloadService {
 					// Add rows for each Credit object
 
 					for (Credit credit : credits) {
-						if (!credit.getItems().isEmpty()) {
+						if (StringUtils.hasText(credit.getCategory()) && !credit.getItems().isEmpty()) {
 							XWPFTableRow row = table.createRow();
 							XWPFTableCell cell1 = row.getCell(0);
 
