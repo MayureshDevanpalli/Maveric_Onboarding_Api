@@ -17,8 +17,8 @@ public class ExceptionHandlers {
 		Map<String, Object> errorDetails = new HashMap<>();
 		errorDetails.put("error", "Gemini Exception");
 		errorDetails.put("message", ex.getMessage());
-		errorDetails.put("status", HttpStatus.BAD_REQUEST.value());
-		return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+		errorDetails.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+		return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
 
 }
