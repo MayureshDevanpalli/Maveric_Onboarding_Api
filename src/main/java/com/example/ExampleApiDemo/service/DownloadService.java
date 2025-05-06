@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.example.ExampleApiDemo.model.Credit;
+import com.example.ExampleApiDemo.model.ProjectDetail;
 import com.example.ExampleApiDemo.model.ProjectExperience;
 import com.example.ExampleApiDemo.model.ResumeData;
 
@@ -170,16 +172,20 @@ public class DownloadService {
 					// Create a new paragraph and run
 					XWPFParagraph para = cell0.addParagraph();
 
-					createCellOfClientColumn(experience.getClient(), "Client: ", para);
-					createCellOfClientColumn(experience.getProject(), "Project: ", para);
-					createCellOfClientColumn(experience.getRole(), "Role: ", para);
-					createCellOfClientColumn(experience.getDuration(), "Duration: ", para);
-					createCellOfClientColumn(experience.getLocation(), "Location: ", para);
-					createCellOfClientColumn(
-							String.join(", ",
-									Objects.requireNonNullElse(experience.getTools(), Collections.emptyList())),
-							"Tools: ",
-							para);
+					for (ProjectDetail item : experience.getProjectDetails()) {
+						if (item.getValue() instanceof String) {
+							createCellOfClientColumn(item.getValue().toString(), item.getKey() + ": ", para);
+						} else if (item.getValue() instanceof List<?>) {
+							createCellOfClientColumn(
+									String.join(", ",
+											Objects.requireNonNullElse(
+													Arrays.asList(item.getValue().toString().split(",")),
+													Collections.emptyList())),
+									item.getKey() + ": ",
+									para);
+						}
+
+					}
 
 					// Set width for first column
 					CTTcPr tcPr = cell0.getCTTc().addNewTcPr();

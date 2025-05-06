@@ -307,12 +307,32 @@ public class ResumeUtils {
 			"<example>\r\n" + //
 			"\"projectExperience\": [\r\n" + //
 			"\t{{\r\n" + //
-			"\t\"client\": \"CustomerXPs Software Pvt Lmt\",\r\n" + //
-			"\t\"project\": \"Search Engine for All file types - Sunhack Hackathon - Meta & Amazon Sponsored\",\r\n" + //
-			"\t\"role\": \"Team Lead\",\r\n" + //
-			"\t\"location\": \"Pune, Maharashtra\",\r\n" + //
-			"\t\"duration\": \"Nov 2023 - Jan 2025\"\r\n" + //
-			"\t\"tools\": [\"Node\", \"JS\", \".NET\", \"Redux\", \"MSAL\", \"MongoDB\", so on ... ]\r\n" + //
+			"\t\"projectDetails\":[\r\n" + //
+			"\t{{\r\n" + //
+			"\t\"key\": \"client\",\r\n" + //
+			"\t\"value\": \"CustomerXPs Software Pvt Lmt\",\r\n" + //
+			"\t}},\r\n" + //
+			"\t{{\r\n" + //
+			"\t\"key\": \"project\",\r\n" + //
+			"\t\"value\": \"Search Engine for All file types - Sunhack Hackathon - Meta & Amazon Sponsored\",\r\n" + //
+			"\t}},\r\n" + //
+			"\t{{\r\n" + //
+			"\t\"key\": \"role\",\r\n" + //
+			"\t\"value\": \"Team Lead\",\r\n" + //
+			"\t}},\r\n" + //
+			"\t{{\r\n" + //
+			"\t\"key\": \"location\",\r\n" + //
+			"\t\"value\": \"Pune, Maharashtra\",\r\n" + //
+			"\t}},\r\n" + //
+			"\t{{\r\n" + //
+			"\t\"key\": \"duration\",\r\n" + //
+			"\t\"value\": \"Nov 2023 - Jan 2025\",\r\n" + //
+			"\t}},\r\n" + //
+			"\t{{\r\n" + //
+			"\t\"key\": \"tools\",\r\n" + //
+			"\t\"value\": [\"Node\", \"JS\", \".NET\", \"Redux\", \"MSAL\", \"MongoDB\", so on ... ]\r\n" + //
+			"\t}},\r\n" + //
+			"]\r\n" + //
 			"\t\"description\": \"Automated data ingestion and market risk visualization using historical data for decision-making.\"\r\n"
 			+ //
 			"\t\"responsibilities\": [\r\n" + //

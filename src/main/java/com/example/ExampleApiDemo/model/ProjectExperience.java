@@ -13,23 +13,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ProjectExperience {
 
-  @JsonProperty("client")
-  private String client;
-
-  @JsonProperty("project")
-  private String project;
-
-  @JsonProperty("role")
-  private String role;
-
-  @JsonProperty("location")
-  private String location;
-
-  @JsonProperty("duration")
-  private String duration;
-
-  @JsonProperty("tools")
-  private List<String> tools;
+  @JsonProperty("projectDetails")
+  private List<ProjectDetail> projectDetails;
 
   @JsonProperty("description")
   private String description;
