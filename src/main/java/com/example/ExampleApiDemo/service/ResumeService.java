@@ -123,7 +123,7 @@ public class ResumeService {
       return new ObjectMapper().readValue(jsonResponse, ResumeData.class);
     } catch (Exception e) {
       log.error("Gemini API call failed: {}" + e.getLocalizedMessage());
-      throw new GeminiException("Error while extracting resume data. Please try again later.", e);
+      throw new GeminiException("Error while extracting raw resume data. Please try again later.", e);
     }
   }
 
