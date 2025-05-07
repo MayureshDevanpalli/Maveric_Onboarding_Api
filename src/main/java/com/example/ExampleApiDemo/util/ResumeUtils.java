@@ -349,7 +349,8 @@ public class ResumeUtils {
 			"</instructions>";
 
 	// new “raw formatter” prompt:
-	public static final String RAW_FORMATTER_PROMPT ="Extract the following resume text into a JSON object with exactly these top-level fields and subfields.  Do **not** paraphrase, summarize, or alter any wording—take each section verbatim:\n" +
+	public static final String RAW_FORMATTER_PROMPT = "Extract the following resume text into a JSON object with exactly these top-level fields and subfields.  Do **not** paraphrase, summarize, or alter any wording—take each section verbatim:\n"
+			+
 			"\n" +
 			"Resume text:\n" +
 			"{resume_text}\n" +
@@ -361,7 +362,8 @@ public class ResumeUtils {
 			"    \"candidatePosition\": string      // current role/title (if present; otherwise empty string)\n" +
 			"  },\n" +
 			"  \"professionalSummary\": string,     // the entire “PROFESSIONAL SUMMARY” paragraph\n" +
-			"  \"professionalExperience\": [        // list each bullet under “WORK EXPERIENCE” as a separate string\n" +
+			"  \"professionalExperience\": [        // list each bullet under “WORK EXPERIENCE” as a separate string\n"
+			+
 			"    string, ...\n" +
 			"  ],\n" +
 			"  \"awards\": [                        // list any awards (if none, output [])\n" +
@@ -370,7 +372,8 @@ public class ResumeUtils {
 			"  \"certifications\": [                // list any certifications (if none, [])\n" +
 			"    string, ...\n" +
 			"  ],\n" +
-			"  \"education\": [                     // list each education entry (institution + degree + dates) as a string\n" +
+			"  \"education\": [                     // list each education entry (institution + degree + dates) as a string\n"
+			+
 			"    string, ...\n" +
 			"  ],\n" +
 			"  \"credits\": [                       // list skill-categories and items, e.g.:\n" +
@@ -381,12 +384,11 @@ public class ResumeUtils {
 			"  ],\n" +
 			"  \"projectExperience\": [             // if present, list each project as object with these keys:\n" +
 			"    {\n" +
-			"      \"client\": string,\n" +
-			"      \"project\": string,\n" +
-			"      \"role\": string,\n" +
-			"      \"duration\": string,\n" +
-			"      \"location\": string,\n" +
-			"      \"tools\": [ string, ... ],\n" +
+			"      \"projectDetails\": [ \n" +
+			"			{key: \"string\", value: \"string\"}, // key like client, project, duration, role, etc and values as their value \n"
+			+
+			"			{key: \"string\", value: \"string\"},... \n" +
+			"		],\n" +
 			"      \"description\": string,\n" +
 			"      \"responsibilities\": [ string, ... ]\n" +
 			"    }, ...\n" +
@@ -401,6 +403,4 @@ public class ResumeUtils {
 			"\n" +
 			"Provide the JSON object as your sole output.\n";
 
-
 }
-
