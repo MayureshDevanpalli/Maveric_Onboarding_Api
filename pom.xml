@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
-	<artifactId>ExampleApiDemo</artifactId>
+	<artifactId>resume-standardizer</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ExampleApiDemo</name>
 	<description>Demo project for Spring Boot</description>
@@ -27,7 +27,7 @@
 		<url/>
 	</scm>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>17</java.version>
 	</properties>
 	<dependencies>
     <dependency>
