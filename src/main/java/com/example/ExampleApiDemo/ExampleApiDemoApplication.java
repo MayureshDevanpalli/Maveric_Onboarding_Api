@@ -16,10 +16,6 @@ public class ExampleApiDemoApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(ExampleApiDemoApplication.class, args);
-	}
-
-	@PostConstruct
-	void init() {
 		try {
 			String ipAddress = InetAddress.getLocalHost().getHostAddress();
 			String port = System.getProperty("server.port", "8080");
