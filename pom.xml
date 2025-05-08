@@ -83,6 +83,29 @@
 	<build>
 		<plugins>
 			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<id>copy-react-dist</id>
+						<phase>process-resources</phase>
+						<configuration>
+							<target>
+								<delete dir="src/main/resources/static"/>
+								<mkdir dir="src/main/resources/static"/>
+								<copy todir="src/main/resources/static" overwrite="true">
+									<fileset dir="../Maveric_Onboarding_Web/dist"/>
+								</copy>
+							</target>
+						</configuration>
+						<goals>
+							<goal>run</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
