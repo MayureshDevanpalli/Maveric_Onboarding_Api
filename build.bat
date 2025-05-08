@@ -1,3 +1,3 @@
 @echo off
-mvn clean install
+cmd /k mvn clean install
 pause
